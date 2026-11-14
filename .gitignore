@@ -1,0 +1,21 @@
+
+# Ambiente virtual
+.venv/
+
+# Dados originais
+dados_originais/
+
+# CSV populacional
+dados_tratados/populacao_enem_2025.csv
+
+# Arquivos temporarios
+__pycache__/
+*.pyc
+*.log
+
+# Configuracoes locais
+.streamlit/secrets.toml
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
