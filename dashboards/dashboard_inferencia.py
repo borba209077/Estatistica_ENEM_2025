@@ -185,379 +185,6 @@ st.caption(
 )
 
 
-# Teste de hipóteses para duas médias
-st.divider()
-st.subheader(
-    "Teste de hipóteses — Médias de Matemática"
-)
-
-st.write(
-    "Comparação entre participantes que realizaram "
-    "a prova no Rio Grande do Sul (RS) e em "
-    "São Paulo (SP)."
-)
-
-notas_rs = amostra.loc[
-    amostra["SG_UF_PROVA"] == "RS",
-    "NU_NOTA_MT"
-].dropna()
-
-notas_sp = amostra.loc[
-    amostra["SG_UF_PROVA"] == "SP",
-    "NU_NOTA_MT"
-].dropna()
-
-col1, col2 = st.columns(2)
-
-col1.metric("Participantes RS", len(notas_rs))
-col2.metric("Participantes SP", len(notas_sp))
-
-st.write(
-    f"Média RS: **{notas_rs.mean():.2f}** pontos"
-)
-
-st.write(
-    f"Média SP: **{notas_sp.mean():.2f}** pontos"
-)
-
-if len(notas_rs) >= 2 and len(notas_sp) >= 2:
-    estatistica_t, valor_p = stats.ttest_ind(
-        notas_rs,
-        notas_sp,
-        equal_var=False
-    )
-
-    st.write(f"Estatística t: **{estatistica_t:.4f}**")
-    st.write(f"Valor-p: **{valor_p:.4f}**")
-
-    if valor_p < 0.05:
-        st.success(
-            "Resultado: rejeitamos H0 ao nível "
-            "de significância de 5%. Há evidência "
-            "de diferença entre as médias."
-        )
-    else:
-        st.info(
-            "Resultado: não rejeitamos H0 ao nível "
-            "de significância de 5%. Não há evidência "
-            "estatística suficiente de diferença "
-            "entre as médias."
-        )
-else:
-    st.warning(
-        "A amostra não possui observações suficientes "
-        "para realizar o teste."
-    )
-
-
-# Teste de hipóteses para duas proporções
-st.divider()
-st.subheader(
-    "Teste de hipóteses — Duas proporções"
-)
-
-st.write(
-    "Comparação da proporção de participantes "
-    "com nota de Redação igual ou superior "
-    "a 600 pontos no RS e em SP."
-)
-
-red_rs = amostra.loc[
-    amostra["SG_UF_PROVA"] == "RS",
-    "NU_NOTA_REDACAO"
-].dropna()
-
-red_sp = amostra.loc[
-    amostra["SG_UF_PROVA"] == "SP",
-    "NU_NOTA_REDACAO"
-].dropna()
-
-n_rs = len(red_rs)
-n_sp = len(red_sp)
-
-sucessos_rs = int((red_rs >= 600).sum())
-sucessos_sp = int((red_sp >= 600).sum())
-
-prop_rs = sucessos_rs / n_rs
-prop_sp = sucessos_sp / n_sp
-
-col1, col2 = st.columns(2)
-
-col1.metric(
-    "Proporção RS",
-    f"{prop_rs * 100:.2f}%"
-)
-
-col2.metric(
-    "Proporção SP",
-    f"{prop_sp * 100:.2f}%"
-)
-
-st.write(
-    f"RS: {sucessos_rs} de {n_rs} participantes"
-)
-
-st.write(
-    f"SP: {sucessos_sp} de {n_sp} participantes"
-)
-
-# Teste z para duas proporções
-prop_combinada = (
-    (sucessos_rs + sucessos_sp)
-    / (n_rs + n_sp)
-)
-
-erro_padrao = np.sqrt(
-    prop_combinada
-    * (1 - prop_combinada)
-    * (1 / n_rs + 1 / n_sp)
-)
-
-if erro_padrao > 0:
-    z = (prop_rs - prop_sp) / erro_padrao
-
-    valor_p_prop = 2 * stats.norm.sf(abs(z))
-
-    st.write(f"Estatística z: **{z:.4f}**")
-    st.write(f"Valor-p: **{valor_p_prop:.4f}**")
-
-    if valor_p_prop < 0.05:
-        st.success(
-            "Rejeitamos H0 ao nível de 5%. "
-            "Há evidência de diferença entre "
-            "as proporções."
-        )
-    else:
-        st.info(
-            "Não rejeitamos H0 ao nível de 5%. "
-            "Não há evidência estatística "
-            "suficiente de diferença entre "
-            "as proporções."
-        )
-else:
-    st.warning(
-        "Não foi possível calcular o teste z."
-    )
-
-
-# Intervalo de confiança para diferença de proporções
-st.divider()
-st.subheader(
-    "Intervalo de confiança — Diferença de proporções"
-)
-
-# Diferença observada entre RS e SP
-diferenca_prop = prop_rs - prop_sp
-
-# Erro-padrão não combinado
-erro_padrao_ic = np.sqrt(
-    prop_rs * (1 - prop_rs) / n_rs
-    + prop_sp * (1 - prop_sp) / n_sp
-)
-
-# Nível de confiança de 95%
-z_critico_ic = stats.norm.ppf(0.975)
-
-margem_ic = z_critico_ic * erro_padrao_ic
-
-limite_inf_prop = diferenca_prop - margem_ic
-limite_sup_prop = diferenca_prop + margem_ic
-
-st.metric(
-    "Diferença observada (RS - SP)",
-    f"{diferenca_prop * 100:.2f} p.p."
-)
-
-st.write(
-    "Intervalo de confiança de 95% para "
-    "a diferença entre proporções:"
-)
-
-st.success(
-    f"[{limite_inf_prop * 100:.2f} ; "
-    f"{limite_sup_prop * 100:.2f}] "
-    "pontos percentuais"
-)
-
-if limite_inf_prop <= 0 <= limite_sup_prop:
-    st.info(
-        "O intervalo contém zero. "
-        "Isso é compatível com a ausência de "
-        "diferença estatisticamente significativa "
-        "ao nível de 5%."
-    )
-else:
-    st.success(
-        "O intervalo não contém zero, indicando "
-        "diferença estatisticamente significativa "
-        "ao nível de 5%."
-    )
-
-st.caption(
-    "Método: intervalo de Wald para diferença "
-    "de duas proporções independentes, "
-    "com erro-padrão não combinado."
-)
-
-
-# Intervalo de confiança para diferença de médias
-st.divider()
-st.subheader(
-    "Intervalo de confiança — Diferença de médias"
-)
-
-# Estatísticas dos dois grupos
-media_rs = notas_rs.mean()
-media_sp = notas_sp.mean()
-
-var_rs = notas_rs.var(ddof=1)
-var_sp = notas_sp.var(ddof=1)
-
-n1 = len(notas_rs)
-n2 = len(notas_sp)
-
-# Diferença entre médias
-diferenca_medias = media_rs - media_sp
-
-# Erro-padrão de Welch
-a = var_rs / n1
-b = var_sp / n2
-
-erro_padrao_welch = np.sqrt(a + b)
-
-# Graus de liberdade aproximados
-gl_welch = (a + b) ** 2 / (
-    (a ** 2) / (n1 - 1)
-    + (b ** 2) / (n2 - 1)
-)
-
-# Intervalo de confiança de 95%
-t_critico_welch = stats.t.ppf(
-    0.975,
-    df=gl_welch
-)
-
-margem_welch = (
-    t_critico_welch * erro_padrao_welch
-)
-
-limite_inf_medias = (
-    diferenca_medias - margem_welch
-)
-
-limite_sup_medias = (
-    diferenca_medias + margem_welch
-)
-
-st.metric(
-    "Diferença observada (RS - SP)",
-    f"{diferenca_medias:.2f} pontos"
-)
-
-st.success(
-    f"Intervalo de confiança de 95%: "
-    f"[{limite_inf_medias:.2f} ; "
-    f"{limite_sup_medias:.2f}] pontos"
-)
-
-if limite_inf_medias <= 0 <= limite_sup_medias:
-    st.info(
-        "O intervalo contém zero. "
-        "Não há evidência estatística suficiente "
-        "de diferença entre as médias ao nível de 5%."
-    )
-else:
-    st.success(
-        "O intervalo não contém zero. "
-        "Há evidência estatística de diferença "
-        "entre as médias ao nível de 5%."
-    )
-
-st.caption(
-    "Método: intervalo t de Welch para diferença "
-    "entre duas médias independentes, sem pressupor "
-    "igualdade das variâncias."
-)
-
-
-# Verificação de integridade da amostra
-st.divider()
-st.subheader("Verificação da integridade dos dados")
-
-total_registros = len(amostra)
-
-ausentes_mt = amostra["NU_NOTA_MT"].isna().sum()
-ausentes_red = amostra["NU_NOTA_REDACAO"].isna().sum()
-
-duplicados = amostra["NU_SEQUENCIAL"].duplicated().sum()
-
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric("Total de registros", total_registros)
-col2.metric("Notas MT ausentes", ausentes_mt)
-col3.metric("Notas Redação ausentes", ausentes_red)
-col4.metric("Identificadores duplicados", duplicados)
-
-if (
-    total_registros == 1067
-    and ausentes_mt == 0
-    and ausentes_red == 0
-    and duplicados == 0
-):
-    st.success(
-        "A amostra passou nas verificações "
-        "básicas de integridade."
-    )
-else:
-    st.warning(
-        "Foram identificadas inconsistências "
-        "que precisam ser verificadas."
-    )
-
-
-# Informações metodológicas
-st.divider()
-st.subheader("Metodologia estatística")
-
-st.markdown("""
-**População:** 3.244.348 participantes do ENEM 2025
-com notas válidas de Matemática e Redação.
-
-**Amostra:** 1.067 participantes selecionados por
-amostragem aleatória simples, sem reposição.
-
-**Método de dimensionamento:** nível de confiança de
-95%, margem de erro de 3 pontos percentuais,
-proporção esperada de 50% e correção para
-população finita.
-
-**Intervalos de confiança para médias:**
-distribuição t de Student, com desvio-padrão
-estimado pela amostra.
-
-**Comparação de médias:** teste t de Welch,
-bilateral, para grupos independentes.
-
-**Comparação de proporções:** teste z bilateral
-para duas proporções independentes.
-
-**Intervalo para diferença de médias:**
-método de Welch.
-
-**Intervalo para diferença de proporções:**
-método de Wald, com erro-padrão não combinado.
-
-**Nível de significância dos testes:** 5%.
-""")
-
-st.info(
-    "A margem de erro de 3 pontos percentuais "
-    "utilizada no dimensionamento da amostra "
-    "refere-se à estimação de proporções, "
-    "não às médias das notas."
-)
-
-
 # Teste de hipótese para uma média populacional
 st.divider()
 st.subheader(
@@ -984,6 +611,379 @@ else:
         "A proporção populacional não está contida "
         "no intervalo de confiança de 95%."
     )
+
+# Teste de hipóteses para duas médias
+st.divider()
+st.subheader(
+    "Teste de hipóteses — Médias de Matemática"
+)
+
+st.write(
+    "Comparação entre participantes que realizaram "
+    "a prova no Rio Grande do Sul (RS) e em "
+    "São Paulo (SP)."
+)
+
+notas_rs = amostra.loc[
+    amostra["SG_UF_PROVA"] == "RS",
+    "NU_NOTA_MT"
+].dropna()
+
+notas_sp = amostra.loc[
+    amostra["SG_UF_PROVA"] == "SP",
+    "NU_NOTA_MT"
+].dropna()
+
+col1, col2 = st.columns(2)
+
+col1.metric("Participantes RS", len(notas_rs))
+col2.metric("Participantes SP", len(notas_sp))
+
+st.write(
+    f"Média RS: **{notas_rs.mean():.2f}** pontos"
+)
+
+st.write(
+    f"Média SP: **{notas_sp.mean():.2f}** pontos"
+)
+
+if len(notas_rs) >= 2 and len(notas_sp) >= 2:
+    estatistica_t, valor_p = stats.ttest_ind(
+        notas_rs,
+        notas_sp,
+        equal_var=False
+    )
+
+    st.write(f"Estatística t: **{estatistica_t:.4f}**")
+    st.write(f"Valor-p: **{valor_p:.4f}**")
+
+    if valor_p < 0.05:
+        st.success(
+            "Resultado: rejeitamos H0 ao nível "
+            "de significância de 5%. Há evidência "
+            "de diferença entre as médias."
+        )
+    else:
+        st.info(
+            "Resultado: não rejeitamos H0 ao nível "
+            "de significância de 5%. Não há evidência "
+            "estatística suficiente de diferença "
+            "entre as médias."
+        )
+else:
+    st.warning(
+        "A amostra não possui observações suficientes "
+        "para realizar o teste."
+    )
+
+
+# Teste de hipóteses para duas proporções
+st.divider()
+st.subheader(
+    "Teste de hipóteses — Duas proporções"
+)
+
+st.write(
+    "Comparação da proporção de participantes "
+    "com nota de Redação igual ou superior "
+    "a 600 pontos no RS e em SP."
+)
+
+red_rs = amostra.loc[
+    amostra["SG_UF_PROVA"] == "RS",
+    "NU_NOTA_REDACAO"
+].dropna()
+
+red_sp = amostra.loc[
+    amostra["SG_UF_PROVA"] == "SP",
+    "NU_NOTA_REDACAO"
+].dropna()
+
+n_rs = len(red_rs)
+n_sp = len(red_sp)
+
+sucessos_rs = int((red_rs >= 600).sum())
+sucessos_sp = int((red_sp >= 600).sum())
+
+prop_rs = sucessos_rs / n_rs
+prop_sp = sucessos_sp / n_sp
+
+col1, col2 = st.columns(2)
+
+col1.metric(
+    "Proporção RS",
+    f"{prop_rs * 100:.2f}%"
+)
+
+col2.metric(
+    "Proporção SP",
+    f"{prop_sp * 100:.2f}%"
+)
+
+st.write(
+    f"RS: {sucessos_rs} de {n_rs} participantes"
+)
+
+st.write(
+    f"SP: {sucessos_sp} de {n_sp} participantes"
+)
+
+# Teste z para duas proporções
+prop_combinada = (
+    (sucessos_rs + sucessos_sp)
+    / (n_rs + n_sp)
+)
+
+erro_padrao = np.sqrt(
+    prop_combinada
+    * (1 - prop_combinada)
+    * (1 / n_rs + 1 / n_sp)
+)
+
+if erro_padrao > 0:
+    z = (prop_rs - prop_sp) / erro_padrao
+
+    valor_p_prop = 2 * stats.norm.sf(abs(z))
+
+    st.write(f"Estatística z: **{z:.4f}**")
+    st.write(f"Valor-p: **{valor_p_prop:.4f}**")
+
+    if valor_p_prop < 0.05:
+        st.success(
+            "Rejeitamos H0 ao nível de 5%. "
+            "Há evidência de diferença entre "
+            "as proporções."
+        )
+    else:
+        st.info(
+            "Não rejeitamos H0 ao nível de 5%. "
+            "Não há evidência estatística "
+            "suficiente de diferença entre "
+            "as proporções."
+        )
+else:
+    st.warning(
+        "Não foi possível calcular o teste z."
+    )
+
+
+# Intervalo de confiança para diferença de proporções
+st.divider()
+st.subheader(
+    "Intervalo de confiança — Diferença de proporções"
+)
+
+# Diferença observada entre RS e SP
+diferenca_prop = prop_rs - prop_sp
+
+# Erro-padrão não combinado
+erro_padrao_ic = np.sqrt(
+    prop_rs * (1 - prop_rs) / n_rs
+    + prop_sp * (1 - prop_sp) / n_sp
+)
+
+# Nível de confiança de 95%
+z_critico_ic = stats.norm.ppf(0.975)
+
+margem_ic = z_critico_ic * erro_padrao_ic
+
+limite_inf_prop = diferenca_prop - margem_ic
+limite_sup_prop = diferenca_prop + margem_ic
+
+st.metric(
+    "Diferença observada (RS - SP)",
+    f"{diferenca_prop * 100:.2f} p.p."
+)
+
+st.write(
+    "Intervalo de confiança de 95% para "
+    "a diferença entre proporções:"
+)
+
+st.success(
+    f"[{limite_inf_prop * 100:.2f} ; "
+    f"{limite_sup_prop * 100:.2f}] "
+    "pontos percentuais"
+)
+
+if limite_inf_prop <= 0 <= limite_sup_prop:
+    st.info(
+        "O intervalo contém zero. "
+        "Isso é compatível com a ausência de "
+        "diferença estatisticamente significativa "
+        "ao nível de 5%."
+    )
+else:
+    st.success(
+        "O intervalo não contém zero, indicando "
+        "diferença estatisticamente significativa "
+        "ao nível de 5%."
+    )
+
+st.caption(
+    "Método: intervalo de Wald para diferença "
+    "de duas proporções independentes, "
+    "com erro-padrão não combinado."
+)
+
+
+# Intervalo de confiança para diferença de médias
+st.divider()
+st.subheader(
+    "Intervalo de confiança — Diferença de médias"
+)
+
+# Estatísticas dos dois grupos
+media_rs = notas_rs.mean()
+media_sp = notas_sp.mean()
+
+var_rs = notas_rs.var(ddof=1)
+var_sp = notas_sp.var(ddof=1)
+
+n1 = len(notas_rs)
+n2 = len(notas_sp)
+
+# Diferença entre médias
+diferenca_medias = media_rs - media_sp
+
+# Erro-padrão de Welch
+a = var_rs / n1
+b = var_sp / n2
+
+erro_padrao_welch = np.sqrt(a + b)
+
+# Graus de liberdade aproximados
+gl_welch = (a + b) ** 2 / (
+    (a ** 2) / (n1 - 1)
+    + (b ** 2) / (n2 - 1)
+)
+
+# Intervalo de confiança de 95%
+t_critico_welch = stats.t.ppf(
+    0.975,
+    df=gl_welch
+)
+
+margem_welch = (
+    t_critico_welch * erro_padrao_welch
+)
+
+limite_inf_medias = (
+    diferenca_medias - margem_welch
+)
+
+limite_sup_medias = (
+    diferenca_medias + margem_welch
+)
+
+st.metric(
+    "Diferença observada (RS - SP)",
+    f"{diferenca_medias:.2f} pontos"
+)
+
+st.success(
+    f"Intervalo de confiança de 95%: "
+    f"[{limite_inf_medias:.2f} ; "
+    f"{limite_sup_medias:.2f}] pontos"
+)
+
+if limite_inf_medias <= 0 <= limite_sup_medias:
+    st.info(
+        "O intervalo contém zero. "
+        "Não há evidência estatística suficiente "
+        "de diferença entre as médias ao nível de 5%."
+    )
+else:
+    st.success(
+        "O intervalo não contém zero. "
+        "Há evidência estatística de diferença "
+        "entre as médias ao nível de 5%."
+    )
+
+st.caption(
+    "Método: intervalo t de Welch para diferença "
+    "entre duas médias independentes, sem pressupor "
+    "igualdade das variâncias."
+)
+
+
+# Verificação de integridade da amostra
+st.divider()
+st.subheader("Verificação da integridade dos dados")
+
+total_registros = len(amostra)
+
+ausentes_mt = amostra["NU_NOTA_MT"].isna().sum()
+ausentes_red = amostra["NU_NOTA_REDACAO"].isna().sum()
+
+duplicados = amostra["NU_SEQUENCIAL"].duplicated().sum()
+
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric("Total de registros", total_registros)
+col2.metric("Notas MT ausentes", ausentes_mt)
+col3.metric("Notas Redação ausentes", ausentes_red)
+col4.metric("Identificadores duplicados", duplicados)
+
+if (
+    total_registros == 1067
+    and ausentes_mt == 0
+    and ausentes_red == 0
+    and duplicados == 0
+):
+    st.success(
+        "A amostra passou nas verificações "
+        "básicas de integridade."
+    )
+else:
+    st.warning(
+        "Foram identificadas inconsistências "
+        "que precisam ser verificadas."
+    )
+
+
+# Informações metodológicas
+st.divider()
+st.subheader("Metodologia estatística")
+
+st.markdown("""
+**População:** 3.244.348 participantes do ENEM 2025
+com notas válidas de Matemática e Redação.
+
+**Amostra:** 1.067 participantes selecionados por
+amostragem aleatória simples, sem reposição.
+
+**Método de dimensionamento:** nível de confiança de
+95%, margem de erro de 3 pontos percentuais,
+proporção esperada de 50% e correção para
+população finita.
+
+**Intervalos de confiança para médias:**
+distribuição t de Student, com desvio-padrão
+estimado pela amostra.
+
+**Comparação de médias:** teste t de Welch,
+bilateral, para grupos independentes.
+
+**Comparação de proporções:** teste z bilateral
+para duas proporções independentes.
+
+**Intervalo para diferença de médias:**
+método de Welch.
+
+**Intervalo para diferença de proporções:**
+método de Wald, com erro-padrão não combinado.
+
+**Nível de significância dos testes:** 5%.
+""")
+
+st.info(
+    "A margem de erro de 3 pontos percentuais "
+    "utilizada no dimensionamento da amostra "
+    "refere-se à estimação de proporções, "
+    "não às médias das notas."
+)
+
 
 
 # Quadro-resumo da inferência estatística
