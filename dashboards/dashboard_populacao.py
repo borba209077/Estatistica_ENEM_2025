@@ -34,8 +34,7 @@ def carregar_dados():
             "NU_NOTA_MT",
             "NU_NOTA_REDACAO",
             "SG_UF_PROVA",
-            "TP_STATUS_REDACAO",
-            "TP_DEPENDENCIA_ADM_ESC"
+            "TP_STATUS_REDACAO"
         ]
     )
 
@@ -448,90 +447,3 @@ st.plotly_chart(
     use_container_width=True
 )
 
-
-st.divider()
-st.subheader("Dependência administrativa da escola")
-
-# Descrição das categorias
-dependencias = {
-    "1": "Federal",
-    "2": "Estadual",
-    "3": "Municipal",
-    "4": "Privada"
-}
-
-# Aplicar o filtro geográfico já existente
-categorias_escola = (
-    dados_filtrados["TP_DEPENDENCIA_ADM_ESC"]
-    .astype("string")
-    .map(dependencias)
-    .fillna("Não informada")
-)
-
-# Frequências absolutas
-frequencias_escola = (
-    categorias_escola
-    .value_counts(dropna=False)
-    .rename_axis("Dependência")
-    .reset_index(name="Frequência")
-)
-
-# Frequências relativas
-total_escola = frequencias_escola["Frequência"].sum()
-
-frequencias_escola["Percentual"] = (
-    frequencias_escola["Frequência"]
-    / total_escola * 100
-)
-
-# Verificação
-assert total_escola == len(dados_filtrados)
-
-st.write(
-    f"Distribuição da dependência administrativa — "
-    f"**{uf_hist}**"
-)
-
-st.dataframe(
-    frequencias_escola.style.format({
-        "Frequência": "{:,.0f}",
-        "Percentual": "{:.2f}%"
-    }),
-    hide_index=True,
-    use_container_width=True
-)
-
-# Gráfico de barras
-fig_escola = px.bar(
-    frequencias_escola,
-    x="Dependência",
-    y="Percentual",
-    title=f"Dependência administrativa — {uf_hist}",
-    labels={
-        "Dependência": "Categoria",
-        "Percentual": "Percentual de participantes (%)"
-    },
-    text="Percentual"
-)
-
-fig_escola.update_traces(
-    texttemplate="%{text:.2f}%",
-    textposition="outside"
-)
-
-fig_escola.update_layout(
-    height=450,
-    yaxis_title="Percentual (%)"
-)
-
-st.plotly_chart(
-    fig_escola,
-    use_container_width=True
-)
-
-st.caption(
-    "A categoria 'Não informada' inclui registros "
-    "sem identificação da dependência administrativa. "
-    "Os percentuais utilizam todos os participantes "
-    "do recorte geográfico como denominador."
-)
