@@ -9,7 +9,7 @@ import plotly.express as px
 
 # Configuração da página
 st.set_page_config(
-    page_title="ENEM 2025 - População",
+    page_title="ENEM 2025 - Amostra",
     page_icon="📊",
     layout="wide"
 )
